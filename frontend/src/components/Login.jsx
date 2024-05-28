@@ -1,11 +1,12 @@
 import {useState, useEffect} from 'react'
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import axios from 'axios'
 import { TEInput, TERipple } from "tw-elements-react";
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const navigate = useNavigate()
 
   const handleLogin = async (e)=>{
     e.preventDefault()
@@ -15,6 +16,9 @@ export default function Login() {
       .then((res)=>{
         console.log("Login successful")
         console.log(res.data)
+        localStorage.setItem('token', res.data.token)
+        navigate('/chat')
+    
       })
     }catch(err){
       console.log(err)
