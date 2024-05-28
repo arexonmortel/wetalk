@@ -1,6 +1,7 @@
 
 const { Timestamp } = require('mongodb')
 const mongoose = require('mongoose')
+const Schema = mongoose.Schema
 
 // Define MongoDB schema for message
 const messageSchema = new Schema ({
