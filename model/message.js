@@ -5,8 +5,13 @@ const Schema = mongoose.Schema
 
 // Define MongoDB schema for message
 const messageSchema = new Schema ({
-    sender: String,
-    content: String,
+    sender: {
+        type: String,
+        required: true
+    },
+    message: {
+        type: String,
+    },
     Timestamp : {
         type: Date,
         default: Date.now

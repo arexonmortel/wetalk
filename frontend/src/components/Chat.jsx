@@ -1,44 +1,47 @@
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
-import axios from 'axios';
 
-function Chat() {
+const Chat = () => {
   const token = localStorage.getItem('token');
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [users, setUsers] = useState([]);
-  const socket = io('http://localhost:8080');
+  const [socket, setSocket] = useState(null);
+  const [username, setUsername] = useState(null);
 
   useEffect(() => {
-    // Fetch users from the database
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get('http://localhost:5555/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUsers(response.data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    fetchUsers();
+    // Assume the username is decoded from the token
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    setUsername(decodedToken.username);
 
-    // Listen for incoming messages
-    socket.on('message', (newMessage) => {
+    const newSocket = io('http://localhost:8080', {
+      auth: {
+        token: token,
+      },
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+    });
+
+    newSocket.on('new message', (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+    });
+
+    setSocket(newSocket);
+
+    // Cleanup on component unmount
     return () => {
-      socket.disconnect();
+      newSocket.disconnect();
     };
-  }, [socket, token]);
+  }, [token]);
 
   const handleSendMessage = () => {
     if (message.trim() === '') return;
-    socket.emit('message', message);
-    setMessages((prevMessages) => [...prevMessages, { text: message, self: true }]);
+    socket.emit('new message', { content: message, sender: username });
     setMessage('');
   };
 
@@ -48,36 +51,37 @@ function Chat() {
       <div className="flex flex-col w-full md:w-1/4 bg-gray-800 text-white p-4">
         <h2 className="text-xl font-bold mb-4">Users</h2>
         <ul className="flex-1 overflow-y-auto">
-          {users.map((user) => (
-            <li key={user._id} className="p-2 border-b border-gray-700">
-              {user.username}
-            </li>
-          ))}
+          {/* Placeholder for users list */}
         </ul>
       </div>
-      
+
       {/* Chat Area */}
       <div className="flex flex-col w-full md:w-3/4 bg-white">
         <div className="flex-1 p-4 overflow-y-auto">
           {messages.map((msg, index) => (
-            <div key={index} className={`my-2 p-2 ${msg.self ? 'text-right' : 'text-left'}`}>
-              <div className={`inline-block px-4 py-2 rounded-lg ${msg.self ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
-                {msg.text}
+            <div key={index} className={`my-2 p-2 ${msg.sender === username ? 'text-right' : 'text-left'}`}>
+              <div className="inline-block px-4 py-2 rounded-lg">
+                <p className='text-sm font-thin text-gray-500'>
+                  {msg.sender === username ? 'You' : msg.sender}
+                </p>
+                <div className={`px-4 py-2 mt-1 rounded-lg ${msg.sender === username ? 'bg-blue-500 text-white' : 'bg-black text-white'}`}>
+                  {msg.message}
+                </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="p-4 border-t border-gray-200">
+        <div className="flex p-4 border-t border-gray-300">
           <input
             type="text"
+            className="flex-1 p-2 border rounded-md"
+            placeholder="Type a message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
           <button
+            className="ml-2 p-2 bg-blue-500 text-white rounded-md"
             onClick={handleSendMessage}
-            className="mt-2 w-full bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
           >
             Send
           </button>
@@ -85,6 +89,6 @@ function Chat() {
       </div>
     </div>
   );
-}
+};
 
 export default Chat;
