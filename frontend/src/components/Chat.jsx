@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
+import VideoCall from './VideoCall';
+import { FaVideo } from "react-icons/fa6";
 
 const Chat = () => {
   const token = localStorage.getItem('token');
@@ -7,6 +9,7 @@ const Chat = () => {
   const [message, setMessage] = useState('');
   const [socket, setSocket] = useState(null);
   const [username, setUsername] = useState(null);
+  const [isCalling, setIsCalling] = useState(false);
 
   useEffect(() => {
     // Assume the username is decoded from the token
@@ -45,10 +48,15 @@ const Chat = () => {
     setMessage('');
   };
 
+  const handleStartCall = () => {
+    setIsCalling(true);
+  };
+
   return (
     <div className="flex flex-col h-screen md:flex-row">
+      {isCalling && <VideoCall username={username} />}
       {/* Sidebar */}
-      <div className="flex flex-col w-full md:w-1/4 bg-gray-800 text-white p-4">
+      <div className="flex flex-col w-full md:w-1/4 bg-gray-800 text-black p-4">
         <h2 className="text-xl font-bold mb-4">Users</h2>
         <ul className="flex-1 overflow-y-auto">
           {/* Placeholder for users list */}
@@ -84,6 +92,12 @@ const Chat = () => {
             onClick={handleSendMessage}
           >
             Send
+          </button>
+          <button
+            className="ml-2 p-2 bg-green-500 text-white rounded-md"
+            onClick={handleStartCall}
+          >
+            <FaVideo  className='text-2xl'/>
           </button>
         </div>
       </div>

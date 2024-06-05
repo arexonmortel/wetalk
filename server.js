@@ -11,8 +11,7 @@ const User = require('./model/user');
 const authenticateToken = require('./model/auth');
 
 require('dotenv').config();
-const PORT_EXPRESS = process.env.PORT_EXPRESS || 3000;
-const PORT_SOCKET = process.env.PORT_SOCKET || 2000;
+const PORT = process.env.PORT || 5000;
 
 const app = express();
 
@@ -24,7 +23,7 @@ app.use(cors());
 connectDB();
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('Hello from Node JS');
 });
 
@@ -34,7 +33,6 @@ app.post('/register', async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
-    // Check if the username already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send('Username is not available');
@@ -87,10 +85,11 @@ app.get('/messages', authenticateToken, async (req, res) => {
   }
 });
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'frontend/build')));
 
-// Express route for serving the client-side React app
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
 
 // Socket.io setup with authentication
@@ -137,12 +136,7 @@ io.use((socket, next) => {
   });
 });
 
-
 // Start the server
-app.listen(PORT_EXPRESS, () => {
-  console.log(`Server is running on port ${PORT_EXPRESS}`);
-});
-
-server.listen(PORT_SOCKET, () => {
-  console.log(`Socket.io server is running on port ${PORT_SOCKET}`);
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
