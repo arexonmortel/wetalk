@@ -11,7 +11,8 @@ const User = require('./model/user');
 const authenticateToken = require('./model/auth');
 
 require('dotenv').config();
-const PORT = process.env.PORT || 5000;
+const PORT_EXPRESS = process.env.PORT_EXPRESS || 5000;
+const PORT_SOCKET = process.env.PORT_SOCKET || 8080;
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.use(cors());
 connectDB();
 
 // Routes
-app.get('/api', (req, res) => {
+app.get('/', (req, res) => {
   res.send('Hello from Node JS');
 });
 
@@ -57,7 +58,7 @@ app.post('/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).send('Invalid credentials');
 
-    const token = jwt.sign({ id: user._id, username: user.username }, 'SECRET_KEY');
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
     res.json({ token });
   } catch (err) {
     res.status(500).send('Server error');
@@ -65,12 +66,12 @@ app.post('/login', async (req, res) => {
 });
 
 // Get All the users
-app.get('/users', async(req, res)=>{
+app.get('/users', async (req, res) => {
   try {
-      const users = await User.find();
-      res.json(users);
+    const users = await User.find();
+    res.json(users);
   } catch (err) {
-      res.status(500).send('Server error');
+    res.status(500).send('Server error');
   }
 })
 
@@ -105,7 +106,7 @@ io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Authentication error'));
 
-  jwt.verify(token, 'SECRET_KEY', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return next(new Error('Authentication error'));
     socket.user = user;
     next();
@@ -117,26 +118,30 @@ io.use((socket, next) => {
   socket.on('new message', async (data) => {
     // Save message to MongoDB
     const message = new Message({
-      sender: socket.user.username, 
+      sender: socket.user.username,
       message: data.content,
     });
-    console.log(message)
+    console.log(message);
 
     try {
       const savedMessage = await message.save();
-      io.emit('new message', savedMessage); 
+      io.emit('new message', savedMessage);
     } catch (err) {
       console.error(err);
     }
   });
 
   // Disconnect event
-  socket.on('disconnect', (socket) => {
+  socket.on('disconnect', () => {
     console.log(`User disconnected`);
   });
 });
 
-// Start the server
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start the server for both express and socket.io
+server.listen(PORT_SOCKET, () => {
+  console.log(`Socket.io server is running on port ${PORT_SOCKET}`);
+});
+
+app.listen(PORT_EXPRESS, () => {
+  console.log(`Express server is running on port ${PORT_EXPRESS}`);
 });
