@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cors());
 
 // Connect to MongoDB
-//connectDB();
+connectDB();
 
 // Routes
 app.get('/api', (req, res) => {
