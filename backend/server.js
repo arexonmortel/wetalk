@@ -24,7 +24,7 @@ app.use(cors());
 connectDB();
 
 // Routes
-app.get('/', (req, res) => {
+app.use('/', (req, res) => {
   res.send('Hello from Node JS');
 });
 
