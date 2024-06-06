@@ -24,7 +24,7 @@ app.use(cors());
 connectDB();
 
 // Routes
-app.use('/', (req, res) => {
+app.get('/', (req, res) => {
   res.send('Hello from Node JS');
 });
 
@@ -47,23 +47,33 @@ app.post('/register', async (req, res) => {
   }
 });
 
+
 // User login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
     const user = await User.findOne({ username });
-    if (!user) return res.status(400).send('Invalid credentials');
+    if (!user) {
+      console.error('User not found');
+      return res.status(400).send('Invalid credentials');
+    }
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(400).send('Invalid credentials');
+    if (!validPassword) {
+      console.error('Invalid password');
+      return res.status(400).send('Invalid credentials');
+    }
 
     const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
+    console.log('Token generated:', token); // Log the generated token
     res.json({ token });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).send('Server error');
   }
 });
+
 
 // Get All the users
 app.get('/users', async (req, res) => {

@@ -1,34 +1,50 @@
-import {useState, useEffect} from 'react'
+import { useState } from 'react';
 import { NavLink, useNavigate } from "react-router-dom";
-import axios from 'axios'
+import axios from 'axios';
 import { TEInput, TERipple } from "tw-elements-react";
 
 export default function Login() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const navigate = useNavigate()
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = async (e)=>{
-    e.preventDefault()
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-    try{
-      const response = await axios.post('http://localhost:5555/login', {username, password})
-      .then((res)=>{
-        console.log("Login successful")
-        console.log(res.data)
-        localStorage.setItem('token', res.data.token)
-        navigate('/chat')
-    
-      })
-    }catch(err){
-      console.log(err)
+    try {
+      const response = await axios.post('http://localhost:5555/login', { username, password });
+      const token = response.data.token;
+      console.log(response.data)
+
+      // Check if token is received
+      if (!token) {
+        console.error("No token received from server");
+        return;
+      }
+
+      // Try to decode the token
+      let decodedToken;
+      try {
+        decodedToken = JSON.parse(atob(token.split('.')[1])); // Decoding the payload part of the token
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+        return;
+      }
+
+      console.log("Login successful");
+      console.log("User:", decodedToken.username);
+
+      // Store the token in local storage
+      localStorage.setItem('token', token);
+      navigate('/chat');
+    } catch (err) {
+      console.error("Login error:", err);
     }
   }
 
   return (
     <section className="h-screen">
       <div className="h-full">
-        {/* <!-- Left column container with background--> */}
         <div className="g-6 flex h-full flex-wrap items-center justify-center lg:justify-between">
           <div className="shrink-1 mb-12 grow-0 basis-auto md:mb-0 md:w-9/12 md:shrink-0 lg:w-6/12 xl:w-6/12">
             <img
@@ -38,30 +54,26 @@ export default function Login() {
             />
           </div>
 
-          {/* <!-- Right column container --> */}
           <div className="mb-12 md:mb-0 md:w-8/12 lg:w-5/12 xl:w-5/12">
             <form onSubmit={handleLogin}>
-              {/* <!-- Email input --> */}
               <TEInput
                 type="text"
                 label="Username"
                 size="lg"
                 className="mb-6"
                 value={username}
-                onChange={(e)=> setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
               ></TEInput>
 
-              {/* <!--Password input--> */}
               <TEInput
                 type="password"
                 label="Password"
                 className="mb-6"
                 size="lg"
                 value={password}
-                onChange={(e)=> setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
               ></TEInput>
 
-              {/* <!-- Login button --> */}
               <div className="text-center lg:text-left">
                 <TERipple rippleColor="light">
                   <button
@@ -72,10 +84,9 @@ export default function Login() {
                   </button>
                 </TERipple>
 
-                {/* <!-- Register link --> */}
                 <p className="mb-0 mt-2 pt-1 text-sm font-semibold">
                   Don&apos;t have an account?{" "}
-                  <NavLink to= "/register" className="text-danger transition duration-150 ease-in-out hover:text-danger-600 focus:text-danger-600 active:text-danger-700">
+                  <NavLink to="/register" className="text-danger transition duration-150 ease-in-out hover:text-danger-600 focus:text-danger-600 active:text-danger-700">
                     Register                 
                   </NavLink>
                 </p>
